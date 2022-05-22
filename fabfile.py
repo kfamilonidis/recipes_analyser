@@ -48,7 +48,7 @@ def deploy(ctx, env='.env', branch='master'):
         with c.cd(cache_dir):
             logger.info("Pulling from machine repo")
             c.run('git pull')
-            logger.info("Checkout %s from Flask_api repo" % branch)
+            logger.info("Checkout %s from machine repo" % branch)
             c.run('git checkout %s' % branch)
             c.run('git pull')
         with c.cd(cache_dir):
