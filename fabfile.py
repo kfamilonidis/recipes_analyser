@@ -65,4 +65,4 @@ def deploy(ctx, env='.env', branch='master'):
         logger.info("Restarting nginx")
         c.run('sudo /bin/systemctl restart nginx')
         logger.info("Restarting uWSGi")
-        c.run('sudo /bin/systemctl restart uwsgi')
+        c.run('sudo /bin/systemctl restart machine-learning')
