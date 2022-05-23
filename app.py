@@ -17,3 +17,5 @@ app = Flask(__name__)
 @app.route('/', methods=['GET', 'POST'])
 def hello_world():
     return 'Hello, World!'
+
+app.add_url_rule('/machine', 'hello_world', hello_world)
