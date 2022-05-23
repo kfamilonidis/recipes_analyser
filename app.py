@@ -16,6 +16,6 @@ app = Flask(__name__)
 # Testing URL
 @app.route('/', methods=['GET', 'POST'])
 def hello_world():
-    return 'Hello, World 1!'
+    return 'Hello, World 1,2!'
 
 app.add_url_rule('/machine', 'hello_world', hello_world)
