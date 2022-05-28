@@ -22,17 +22,34 @@ def hello_world():
 
 @app.route('/recipes/v1/analyzer/predict', methods=['GET', 'POST'])
 def recipes_v1_analyzer_predict():
-    analyzer = RecipesV1Analyzer()
-    analyzer.call(request.args.getlist('ingredients[]'))
+    if request.args:
+        data = request.args.getlist('ingredients[]')
+    elif request.form:
+        data = list(request.form.listvalues())[0]
+    else:
+        data = []
 
-    return 'Hello, World 1,2!'
+    analyzer = RecipesV1Analyzer()
+    result   = analyzer.call({ 'ingredients': data })
+
+    return jsonify(result)
 
 @app.route('/recipes/v1/analyzer/update', methods=['GET', 'POST'])
 def recipes_v1_analyzer_update():
+    if request.args:
+        data = request.args.getlist('ingredients[]')
+    elif request.form:
+        data = list(request.form.listvalues())[0]
+    else:
+        data = []
 
+    analyzer = RecipesV1Analyzer()
+    result   = analyzer.call({ 'ingredients': data }, True)
 
-    return 'Hello, World 1,2!'
+    return jsonify(result)
 
 app.add_url_rule('/machine', 'hello_world', hello_world)
 app.add_url_rule('/machine', 'recipes_v1_analyzer_predict', recipes_v1_analyzer_predict)
 app.add_url_rule('/machine', 'recipes_v1_analyzer_update', recipes_v1_analyzer_update)
+
+app.run(debug=True)

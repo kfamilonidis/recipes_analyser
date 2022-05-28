@@ -30,16 +30,17 @@ class ModelFileManager():
     def __init__(self, encoder, refresh = False):
         if not os.path.exists(DS_MODELS_DIR):
             os.makedirs(DS_MODELS_DIR)
+
         vect_path = os.path.join(DS_MODELS_DIR, 'vectorizer.pkl')
         lenc_path = os.path.join(DS_MODELS_DIR, 'encoder.pkl')
         clf_path  = os.path.join(DS_MODELS_DIR, 'random_forest.pkl')
 
         if refresh or any(not os.path.exists(i) for i in [vect_path, lenc_path, clf_path]):
-            vect, lenc, clf  = encoder.call()
+            vect, lenc, clf = encoder.call(self)
 
-            pickle.dump(vect, open(f.vect, 'wb'))
-            pickle.dump(lenc, open(f.lenc, 'wb'))
-            pickle.dump(clf, open(f.clf, 'wb'))
+            pickle.dump(vect, open(vect_path, 'wb'))
+            pickle.dump(lenc, open(lenc_path, 'wb'))
+            pickle.dump(clf, open(clf_path, 'wb'))
         else:
             vect = self.load(vect_path)
             lenc = self.load(lenc_path)
@@ -49,7 +50,7 @@ class ModelFileManager():
         self.lenc = lenc
         self.clf =  clf
         self.features_in  = len(list(filter(re.compile('^ingredients').match, vect.feature_names_)))
-        self.features_out = len(list(filter(re.compile('^recipe').match, vect.feature_names_)))
+        self.features_out = len(np.unique(list(filter(re.compile('^recipe').match, vect.feature_names_))))
         pass
 
     def __enter__(self):
@@ -95,7 +96,6 @@ class Encoder(object):
 
         return [vect, lenc, clf]
 
-
 class RecipesV1Analyzer(object):
     """docstring for RecipesV1Analyzer"""
     def __init__(self):
@@ -107,9 +107,25 @@ class RecipesV1Analyzer(object):
     def __str__(self):
         return 'RecipesV1Analyzer'
 
-    def call(self, params):
-        with ModelFileManager(Encoder, False) as encoder:
-            check = encoder.vect.transform({ 'ingredients': ['Μπάμιες', 'Πατάτες','Καρότα', 'Μαϊντανός'] }).toarray()
+    def call(self, params, refresh = False):
+        print(params)
+
+        with ModelFileManager(Encoder, refresh) as encoder:
+            check = encoder.vect.transform({ 'ingredients': params['ingredients'] }).toarray()
             check = check[:,:encoder.features_in]
 
-            print(encoder.clf.predict(check))
+            pred = encoder.clf.predict(check)
+            pred_a = encoder.clf.predict_proba(check)
+
+            pred_decoded = encoder.lenc.inverse_transform(pred)
+            check_decoded = encoder.vect.inverse_transform(check)
+
+            probs = [{ 'prob': pred_a[0][i], 'recipe': j } for i, j in enumerate(encoder.lenc.classes_)]
+            probs.sort(key=lambda x: x['prob'], reverse=True)
+            probs = list(filter(lambda x: x['prob'] != 0.0 , probs))
+
+            return {
+              "predict": pred_decoded.tolist(),
+              "input": check_decoded,
+              "probs": probs
+            }
