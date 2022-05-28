@@ -1,4 +1,5 @@
 import os
+import re
 import requests
 import json
 import numpy as np
@@ -25,53 +26,74 @@ class Fetcher(object):
         return self.data
 
 class ModelFileManager():
-  """docstring for ModelFileManager"""
-  def __init__(self):
-    pass
+    """docstring for ModelFileManager"""
+    def __init__(self, encoder, refresh = False):
+        if not os.path.exists(DS_MODELS_DIR):
+            os.makedirs(DS_MODELS_DIR)
+        vect_path = os.path.join(DS_MODELS_DIR, 'vectorizer.pkl')
+        lenc_path = os.path.join(DS_MODELS_DIR, 'encoder.pkl')
+        clf_path  = os.path.join(DS_MODELS_DIR, 'random_forest.pkl')
 
-  def __enter__(self):
-    print('__enter__')
-    return self
+        if refresh or any(not os.path.exists(i) for i in [vect_path, lenc_path, clf_path]):
+            vect, lenc, clf  = encoder.call()
 
-  def __exit__(self, exc_type, exc_value, exc_traceback):
-    print('__exit__')
-    pass
+            pickle.dump(vect, open(f.vect, 'wb'))
+            pickle.dump(lenc, open(f.lenc, 'wb'))
+            pickle.dump(clf, open(f.clf, 'wb'))
+        else:
+            vect = self.load(vect_path)
+            lenc = self.load(lenc_path)
+            clf  = self.load(clf_path)
+
+        self.vect = vect
+        self.lenc = lenc
+        self.clf =  clf
+        self.features_in  = len(list(filter(re.compile('^ingredients').match, vect.feature_names_)))
+        self.features_out = len(list(filter(re.compile('^recipe').match, vect.feature_names_)))
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        pass
+
+    def load(self, path):
+          if os.path.exists(path):
+              return pickle.load(open(path, 'rb'))
+          else:
+              return None
 
 class Encoder(object):
     """docstring for Encoder"""
     def __init__(self):
         super(Encoder, self).__init__()
-        if not os.path.exists(DS_MODELS_DIR):
-            os.makedirs(DS_MODELS_DIR)
-
 
     def call(self):
-        with ModelFileManager() as f:
-            xraw = Fetcher().call()
+        xraw = Fetcher().call()
 
-            xraw = [{'ingredients': [ j['name'] for j in i['ingredients'] ], 'recipe': i['name'] } for i in xraw]
-            xraw.sort(key=lambda x: x['recipe'])
+        xraw = [{'ingredients': [ j['name'] for j in i['ingredients'] ], 'recipe': i['name'] } for i in xraw]
+        xraw.sort(key=lambda x: x['recipe'])
 
-            len_out = len(xraw)
+        len_out = len(xraw)
 
-            vect = DictVectorizer()
-            data = vect.fit_transform(xraw).toarray()
-            xdata = data[:,:-len_out]
+        vect = DictVectorizer()
+        data = vect.fit_transform(xraw).toarray()
+        xdata = data[:,:-len_out]
 
-            len_feature = xdata.shape[1]
-            yraw = np.unique([ i['recipe'] for i in xraw ])
+        len_feature = xdata.shape[1]
+        yraw = np.unique([ i['recipe'] for i in xraw ])
 
-            le = LabelEncoder()
-            ydata = le.fit_transform(yraw)
+        lenc = LabelEncoder()
+        ydata = lenc.fit_transform(yraw)
 
-            clf = RandomForestClassifier()
-            clf.fit(xdata, ydata)
+        clf = RandomForestClassifier()
+        clf.fit(xdata, ydata)
 
-            pickle.dump(clf, open(os.path.join(DS_MODELS_DIR, 'random_forest.pkl'), 'wb'))
-            pickle.dump(vect, open(os.path.join(DS_MODELS_DIR, 'vectorizer.pkl'), 'wb'))
-            pickle.dump(le, open(os.path.join(DS_MODELS_DIR, 'encoder.pkl'), 'wb'))
-
-        pass
+        return [vect, lenc, clf]
 
 
 class RecipesV1Analyzer(object):
@@ -86,8 +108,8 @@ class RecipesV1Analyzer(object):
         return 'RecipesV1Analyzer'
 
     def call(self, params):
-        print(params)
-        # thread = multiprocessing.Process(target=Encoder().call, args=())
-        # thread.start()
+        with ModelFileManager(Encoder, False) as encoder:
+            check = encoder.vect.transform({ 'ingredients': ['Μπάμιες', 'Πατάτες','Καρότα', 'Μαϊντανός'] }).toarray()
+            check = check[:,:encoder.features_in]
 
-        pass
+            print(encoder.clf.predict(check))
