@@ -49,7 +49,7 @@ def recipes_v1_analyzer_update():
     return jsonify(result)
 
 app.add_url_rule('/machine', 'hello_world', hello_world)
-app.add_url_rule('/machine', 'recipes_v1_analyzer_predict', recipes_v1_analyzer_predict)
-app.add_url_rule('/machine', 'recipes_v1_analyzer_update', recipes_v1_analyzer_update)
+app.add_url_rule('/machine/recipes/v1/analyzer/predict', 'recipes_v1_analyzer_predict', recipes_v1_analyzer_predict, methods=['GET', 'POST'])
+app.add_url_rule('/machine/recipes/v1/analyzer/update', 'recipes_v1_analyzer_update', recipes_v1_analyzer_update, methods=['GET', 'POST'])
 
 app.run(debug=True)
