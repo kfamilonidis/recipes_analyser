@@ -1,12 +1,14 @@
 import base64
 import json
 from io import BytesIO
+import pdb
 
 import numpy as np
 import requests
 from flask import Flask, request, jsonify
 
 from learn.scikit.recipes import RecipesV1Analyzer
+from learn.helpers import get_data_from_params
 
 # from flask_cors import CORS
 
@@ -22,13 +24,7 @@ def hello_world():
 
 @app.route('/recipes/v1/analyzer/predict', methods=['GET', 'POST'])
 def recipes_v1_analyzer_predict():
-    if request.args:
-        data = request.args.getlist('ingredients[]')
-    elif request.form:
-        data = list(request.form.listvalues())[0]
-    else:
-        data = []
-
+    data     = get_data_from_params(request)
     analyzer = RecipesV1Analyzer()
     result   = analyzer.call({ 'ingredients': data })
 
@@ -36,13 +32,7 @@ def recipes_v1_analyzer_predict():
 
 @app.route('/recipes/v1/analyzer/update', methods=['GET', 'POST'])
 def recipes_v1_analyzer_update():
-    if request.args:
-        data = request.args.getlist('ingredients[]')
-    elif request.form:
-        data = list(request.form.listvalues())[0]
-    else:
-        data = []
-
+    data     = get_data_from_params(request)
     analyzer = RecipesV1Analyzer()
     result   = analyzer.call({ 'ingredients': data }, True)
 
