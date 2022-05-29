@@ -62,6 +62,8 @@ def deploy(ctx, env='.env', branch='master'):
                 c.run('deactivate')
         logger.info("Creating the Symlink")
         c.run('ln -sTf %s %s' % (release_dir, current_ver_dir))
+        logger.info("Keeping the last 5 releases")
+        c.run('cd releases; ls -tr | head -n -5 | xargs --no-run-if-empty rm -rf')
         logger.info("Restarting nginx")
         c.run('sudo /bin/systemctl restart nginx')
         logger.info("Restarting uWSGi - machine-learning")
