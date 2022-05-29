@@ -3,7 +3,7 @@ import re
 import numpy as np
 import pickle
 
-DS_MODELS_DIR = '../../../saved_models'
+DS_MODELS_DIR = '../../saved_models'
 
 class ModelFileManager():
     """docstring for ModelFileManager"""
